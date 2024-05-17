@@ -53,6 +53,36 @@ class NewVisitorTest(LiveServerTestCase):
         self.wait_for_row_in_list_table('1: Buy flowers')
         self.wait_for_row_in_list_table('2: Give a gift to Lisi')
 
-        self.fail('Finish the test!')
+        #self.fail('Finish the test!')
         #页面再次更新,她的清单中显示了这两个待办事项
-
+    def test_multiple_users_can_start_lists_at_different_urls(self):
+        #张三新建一个待办事项清单
+        self.browser.get(self.live_server_url)
+        inputbox = self.browser.find_element(By.ID, 'id_new_item')
+        inputbox.send_keys('Buy flowers')
+        inputbox.send_keys(Keys.ENTER)
+        self.wait_for_row_in_list_table('1: Buy flowers')
+        
+        zhangsan_list_url = self.browser.current_url
+        self.assertRegex(zhangsan_list_url, '/lists/.+')
+        
+        self.browser.quit()
+        self.browser = webdriver.Chrome()
+        
+        self.browser.get(self.live_server_url)
+        page_text = self.browser.find_element(By.TAG_NAME, 'body').text
+        self.assertNotIn('Buy flowers', page_text)
+        self.assertNotIn('Give a gift to Lisi', page_text)
+        
+        inputbox = self.browser.find_element(By.ID, 'id_new_item')
+        inputbox.send_keys('Buy milk')
+        inputbox.send_keys(Keys.ENTER)
+        self.wait_for_row_in_list_table('1: Buy milk')
+        
+        wangwu_list_url = self.browser.current_url
+        self.assertRegex(wangwu_list_url, '/lists/.+')
+        self.assertNotEqual(zhangsan_list_url, wangwu_list_url)
+        
+        page_text = self.browser.find_element(By.TAG_NAME, 'body').text
+        self.assertNotIn('Buy flowers', page_text)
+        self.assertIn('Buy milk', page_text)
